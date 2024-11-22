@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quét Mã Vạch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #video {
+            width: 100%;
+            height: 400px;
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quét Mã Vạch</h1>
+    <div id="video-container">
+        <video id="video" autoplay></video>
+    </div>
+
+    <input type="text" id="barcode" placeholder="Mã vạch sẽ xuất hiện ở đây" readonly />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <script>
+        let videoStream = null;
+
+        // Mở camera khi trang được tải
+        window.onload = function() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        videoStream = stream;
+                        document.getElementById('video').srcObject = stream; // Hiển thị video từ camera
+                        startScanner(); // Bắt đầu quét mã vạch ngay lập tức
+                    })
+                    .catch(function(error) {
+                        alert("Không thể truy cập camera: " + error.message);
+                    });
+            } else {
+                alert("Trình duyệt không hỗ trợ camera.");
+            }
+        };
+
+        // Bắt đầu quét mã vạch
+        function startScanner() {
+            if (!videoStream) {
+                alert("Vui lòng mở camera trước!");
+                return;
+            }
+
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#video'),    // Chỉ định phần tử video làm nguồn quét
+                },
+                decoder: {
+                    readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader", "code_39_reader", "codabar_reader"]
+                }
+            }, function(err) {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                Quagga.start(); // Bắt đầu quét mã vạch
+            });
+
+            Quagga.onDetected(function(result) {
+                const barcode = result.codeResult.code;
+                document.getElementById('barcode').value = barcode;
+                Quagga.stop(); // Dừng quét sau khi phát hiện mã vạch
+            });
+        }
+    </script>
+</body>
+</html>
